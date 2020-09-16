@@ -1,40 +1,14 @@
 import requests
-from bs4 import BeautifulSoup
-from time import sleep 
 from random import choice
-import pandas as pd 
-
+from csv import DictReader
+from bs4 import BeautifulSoup
 
 URL = 'http://quotes.toscrape.com/'
-whole_set = []
 
-def get_quotes():
-    page_url = "/page/1"
-    while URL:
-        headers = {"User-Agent" : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'}
-        page = requests.get(f"{URL}{page_url}",headers)
-        soup = BeautifulSoup(page.content, "html.parser")
-
-        quote_text = soup.find_all(class_="quote")
-        
-        for q in quote_text:
-            single_quote = q.find(class_="text").get_text()
-            person_name = q.find(class_="author").get_text()
-            author_bio = q.find("a")["href"]
-            whole_set.append({
-                "text":f"{single_quote}",
-                "author":f"{person_name}",
-                "author bio":f"{author_bio}"
-            })
-        
-        next_page= soup.find(class_="next")
-        if next_page:
-            page_url = next_page.find("a")["href"]
-            print(page_url)
-        else:
-            page_url = None
-            break 
-    
+def read_quotes(filename):
+    with open (filename, "r") as file:
+        csv_reader = DictReader(file)
+        return list(csv_reader)
 
 def start_playing(function):
     quote = choice(whole_set)
@@ -44,7 +18,7 @@ def start_playing(function):
     print(quote["author"]) # For testing purposes
     guess = ""
 
-    #logic
+#logic
     while guess.lower() != quote["author"].lower():
         guess = input(f"Who said that? {guesses_left} guesses remain:> " )
         guesses_left-= 1
@@ -74,25 +48,9 @@ def start_playing(function):
         again = input("Would you like to play again? (y/n) :>")
         if again.lower() in ('yes','y'):
             print("Alright, go on")
-            start_playing(quotes)
+            start_playing(whole_set)
         else:
             print("Alright, bye")
 
-#writing quotes to file to not scrape evertime we start the game 
-def write_quotes():
-    df = pd.DataFrame(whole_set)
-    df.to_csv("whole_set.csv",sep=",",index=False,encoding="UTF-8")
-    print("Quotes written to file")
-
-#start of the actual game
-# start_playing(quotes)
-
-quotes= get_quotes()
-write_quotes()
-
-
-
-
-
-
-
+whole_set = read_quotes("quotes.csv")
+start_playing(whole_set)
